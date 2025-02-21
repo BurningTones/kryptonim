@@ -1,9 +1,10 @@
 package services
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
+
+	"kryptonim/app/helpers"
 
 	"github.com/gin-gonic/gin"
 )
@@ -64,13 +65,16 @@ func (s *exchangeServiceImpl) HandleExchange(c *gin.Context) {
 		return
 	}
 
-	amountInUSD := amount * fromRate.RateToUSD
-	exchangedAmount := amountInUSD / toRate.RateToUSD
+	exchangedAmount, err := helpers.CalculateExchangedAmount(amount, fromRate.RateToUSD, toRate.RateToUSD, toRate.DecimalPlaces)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "calculation error"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"from":   from,
 		"to":     to,
-		"amount": fmt.Sprintf("%.*f", toRate.DecimalPlaces, exchangedAmount),
+		"amount": exchangedAmount,
 	})
 }
 
